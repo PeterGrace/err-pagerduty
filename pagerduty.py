@@ -2,7 +2,6 @@ from errbot import BotPlugin, botcmd
 from operator import itemgetter
 from urllib.error import HTTPError
 from datetime import datetime, timedelta
-from tzlocal import get_localzone
 import logging
 import pygerduty
 import requests
@@ -313,7 +312,7 @@ class PagerDuty(BotPlugin):
                     if requestor['pd_id'] == self.get_oncall_pd_id(schedule_id):
                         return "Sorry, you are already on call"
                     else:
-                        local_tz = get_localzone()
+                        local_tz = datetime.utcnow().astimezone().tzinfo
                         schedule_tz = pytz.timezone(self.config['SCHEDULE_TIMEZONE'])
                         local_dt = local_tz.localize(datetime.now())
                         now = local_dt.astimezone(schedule_tz)
