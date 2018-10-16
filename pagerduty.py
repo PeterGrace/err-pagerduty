@@ -1,7 +1,6 @@
 from errbot import BotPlugin, botcmd
-from errbot.utils import get_sender_username
 from operator import itemgetter
-from urllib2 import HTTPError
+from urllib.error import HTTPError
 from datetime import datetime, timedelta
 from tzlocal import get_localzone
 import logging
@@ -110,7 +109,7 @@ class PagerDuty(BotPlugin):
             if mess.getType() == "chat":
                 return "Sorry, you need to use group chat for PagerDuty commands"
             else:
-                uid = get_sender_username(mess)
+                uid = mess.frm
                 users = self.get_users()
                 try:
                     user_index = map(itemgetter('uid'), users).index(uid)
@@ -132,19 +131,19 @@ class PagerDuty(BotPlugin):
                     return "I can't register you without an email address"
                 else:
                     users = self.get_users()
-                    uid = get_sender_username(mess)
+                    uid = mess.frm
                     email = args[0]
 
                     try:
                         user_index = map(itemgetter('uid'), users).index(uid)
                         user = users[user_index]
                         return "You are already registered as %s" % (user['email'],)
-                    except:
+                    except Exception:
                         try:
                             existing_user_index = map(itemgetter('email'), users).index(email)
                             existing_user = users[existing_user_index]
                             return "The email address you provided is already registered to %s" % (existing_user['uid'],)
-                        except:
+                        except Exception:
                             pd_id = self.get_pd_id_by_email(email)
 
                             if pd_id is None:
@@ -166,7 +165,7 @@ class PagerDuty(BotPlugin):
                 return "Sorry, you need to use group chat for PagerDuty commands"
             else:
                 users = self.get_users()
-                uid = get_sender_username(mess)
+                uid = mess.frm
                 for user in users:
                     if user['uid'] == uid:
                         logging.info("[PagerDuty] unregistering user ID %s" % (uid,))
@@ -189,7 +188,7 @@ class PagerDuty(BotPlugin):
                 oncall_index = map(itemgetter('pd_id'), users).index(oncall_pd_id)
                 oncall_user = users[oncall_index]
                 return "%s has the pager" % (oncall_user['uid'])
-            except Exception, e:
+            except Exception as e:
                 return "Sorry, I couldn't figure out who is on call currently: %s" % (e,)
         else:
             return "Sorry, PagerDuty is not configured"
@@ -229,7 +228,7 @@ class PagerDuty(BotPlugin):
                 body = {'service_key': self.config['SERVICE_API_KEY'],
                         'event_type': 'trigger',
                         'description': 'Urgent page via chat',
-                        'details': {'requestor': get_sender_username(mess),
+                        'details': {'requestor': mess.frm,
                                     'message': " ".join(args)}
                         }
 
@@ -251,8 +250,8 @@ class PagerDuty(BotPlugin):
                 return "Sorry, you need to use group chat for PagerDuty commands"
             else:
                 try:
-                    requestor = self.get_user(get_sender_username(mess))
-                except:
+                    requestor = self.get_user(mess.frm)
+                except Exception:
                     return "Sorry, I don't know who you are. Please use !pager register to teach me your email address."
 
                 try:
@@ -274,8 +273,8 @@ class PagerDuty(BotPlugin):
                 return "Sorry, you need to use group chat for PagerDuty commands"
             else:
                 try:
-                    requestor = self.get_user(get_sender_username(mess))
-                except:
+                    requestor = self.get_user(mess.frm)
+                except Exception:
                     return "Sorry, I don't know who you are. Please use !pager register to teach me your email address."
                 try:
                     incident_id = args[0]
@@ -298,7 +297,7 @@ class PagerDuty(BotPlugin):
                 if len(args) <= 0:
                     return "Sorry, you need to specify the number of minutes for which you'd like to steal the pager"
                 else:
-                    requestor_name = get_sender_username(mess)
+                    requestor_name = mess.frm
                     users = self.get_users()
                     requestor_index = map(itemgetter('uid'), users).index(requestor_name)
                     requestor = users[requestor_index]
@@ -308,7 +307,7 @@ class PagerDuty(BotPlugin):
 
                     try:
                         override_duration = int(args[0])
-                    except:
+                    except Exception:
                         return "Sorry, I could not transform %s into an integer"
 
                     if requestor['pd_id'] == self.get_oncall_pd_id(schedule_id):
